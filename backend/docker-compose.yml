@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: acme-salary-db
+    environment:
+      POSTGRES_USER: acme
+      POSTGRES_PASSWORD: acme
+      POSTGRES_DB: acme_salary
+    ports:
+      - "5432:5432"
+    volumes:
+      - acme_salary_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme -d acme_salary"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  acme_salary_pg:
