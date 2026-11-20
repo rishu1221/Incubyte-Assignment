@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+model Country {
+  code                String   @id @db.Char(2)
+  name                String   @db.VarChar(100)
+  defaultCurrencyCode String   @map("default_currency_code") @db.Char(3)
+  defaultCurrency     Currency @relation("CountryCurrency", fields: [defaultCurrencyCode], references: [code], onDelete: Restrict)
+  employees           Employee[]
+
+  @@map("countries")
+}
+
+model Department {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique @db.VarChar(100)
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model JobLevel {
+  id        String     @id @default(uuid()) @db.Uuid
+  code      String     @unique @db.VarChar(10)
+  name      String     @db.VarChar(100)
+  rank      Int        @unique
+  employees Employee[]
+
+  @@map("job_levels")
+}
+
+model Currency {
+  code       String   @id @db.Char(3)
+  name       String   @db.VarChar(100)
+  usdPerUnit Decimal  @map("usd_per_unit") @db.Decimal(18, 8)
+  rateDate   DateTime @map("rate_date") @db.Date
+  countries  Country[]         @relation("CountryCurrency")
+  revisions  SalaryRevision[]
+
+  @@map("currencies")
+}
+
+model Employee {
+  id           String           @id @default(uuid()) @db.Uuid
+  firstName    String           @map("first_name") @db.VarChar(100)
+  lastName     String           @map("last_name") @db.VarChar(100)
+  email        String           @unique @db.VarChar(254)
+  countryCode  String           @map("country_code") @db.Char(2)
+  departmentId String           @map("department_id") @db.Uuid
+  levelId      String           @map("level_id") @db.Uuid
+  jobTitle     String           @map("job_title") @db.VarChar(120)
+  status       EmploymentStatus @default(ACTIVE)
+  hireDate     DateTime         @map("hire_date") @db.Date
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  country      Country          @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+  department   Department       @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  level        JobLevel         @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  revisions    SalaryRevision[]
+
+  @@map("employees")
+}
+
+model SalaryRevision {
+  id            String   @id @default(uuid()) @db.Uuid
+  employeeId    String   @map("employee_id") @db.Uuid
+  amount        Decimal  @db.Decimal(14, 2)
+  currencyCode  String   @map("currency_code") @db.Char(3)
+  effectiveDate DateTime @map("effective_date") @db.Date
+  reason        String   @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  currency      Currency @relation(fields: [currencyCode], references: [code], onDelete: Restrict)
+
+  @@index([employeeId, effectiveDate(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
+  @@map("salary_revisions")
+}
