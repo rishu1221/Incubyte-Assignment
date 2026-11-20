@@ -21,4 +21,4 @@ COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 USER node
 EXPOSE 4000
-CMD ["node", "dist/server.js"]
+CMD ["npm", "run", "start:prod"]

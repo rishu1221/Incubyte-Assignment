@@ -25,3 +25,8 @@ export function parseEnv(source: NodeJS.ProcessEnv): Env {
 }
 
 export const env = parseEnv(process.env);
+
+/** `CORS_ORIGIN` may list several sites, separated by commas. */
+export function allowedOrigins(value: string): string[] {
+  return [...new Set(value.split(",").map((origin) => origin.trim()).filter((origin) => origin.length > 0))];
+}
